@@ -55,13 +55,16 @@ sudo systemctl enable --now docker
 docker version && docker compose version
 ```
 
-## 2. 一键构建并启动
+## 2. 一键部署
+
+镜像由 GitHub Actions 自动构建并推送到 `ghcr.io`（已设为公开），
+VPS 上直接拉取运行，**不需要 .NET SDK，也不需要编译**。
 
 ```bash
-cd JTTools          # 仓库根目录（docker-compose.yml 所在位置）
+cd JTTools              # 仓库根目录（docker-compose.yml 所在位置）
 
-# 首次构建 + 启动（首次需要下载 SDK 镜像和 NuGet 包，视网络 2~10 分钟）
-docker compose up -d --build
+docker compose pull     # 拉取最新镜像（约 102 MB）
+docker compose up -d    # 启动
 
 # 查看状态与日志
 docker compose ps
@@ -99,20 +102,25 @@ ports:
 ## 5. 常用运维命令
 
 ```bash
-docker compose ps                    # 状态（含健康检查结果）
-docker compose logs -f --tail=200    # 实时日志
-docker compose restart               # 重启
-docker compose down                  # 停止并删除容器
-docker compose up -d --build         # 改完代码后重新构建部署
-docker compose exec jttools bash     # 进入容器排查
+docker compose ps                             # 状态（含健康检查结果）
+docker compose logs -f --tail=200             # 实时日志
+docker compose restart                        # 重启
+docker compose down                           # 停止并删除容器
+docker compose pull && docker compose up -d   # 更新到最新镜像
+docker compose exec jttools bash              # 进入容器排查
 ```
 
 ## 6. 更新部署
 
 ```bash
-cd JTTools          # 仓库根目录
-git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
+```
+
+想固定到某个版本，把 `docker-compose.yml` 里的 `latest` 换成具体标签：
+
+```yaml
+image: ghcr.io/yangye2/jttools:sha-ff57d0d   # 或 v1.0.0
 ```
 
 旧镜像会残留，清理一下：
@@ -155,6 +163,9 @@ server {
 ```
 
 ## 8. 国内网络加速（构建慢 / 拉取失败时）
+
+> 默认的「拉取镜像」部署方式**不涉及**这一节，只有需要自己构建镜像时
+> （第 10 节的方案 B / 方案 C）才用得上。
 
 **Docker 基础镜像**：`Dockerfile` 使用的是 `mcr.microsoft.com`（微软镜像仓库），
 通常可直连。若仍很慢，在 `/etc/docker/daemon.json` 配置镜像加速后 `systemctl restart docker`。
@@ -217,15 +228,18 @@ dotnet publish JTTools/JTTools.csproj -c Release -o ./publish -r linux-x64 --sel
 对比一下：本地开发装的 .NET SDK 是 748 MB —— 那是「造零件的机床」（编译器、MSBuild、
 分析器、模板、多框架 packs），VPS 上跑服务完全不需要。
 
-### 三种构建方式的 VPS 开销
+### 三种部署方式的 VPS 开销
 
 | 方案 | VPS 下载量 | VPS 磁盘占用 | 适合 |
 | --- | --- | --- | --- |
-| **A. 在 VPS 上 `docker compose build`**（当前默认） | 约 426 MB | 峰值约 1.3 GB，清理后约 230 MB | VPS 磁盘 ≥ 5 GB，最省事 |
-| **B. 本地/CI 构建好，推到镜像仓库，VPS 只 `pull`** | 约 102 MB | 约 230 MB | VPS 磁盘紧张 |
-| **C. 本地 `dotnet publish` 出 11 MB，scp 上去跑第 9 节方案** | 约 91 MB | 约 230 MB | 不想在 VPS 上留 SDK 镜像 |
+| **A. CI 构建好推到 ghcr.io，VPS 只 `pull`**（当前默认） | 约 102 MB | 约 230 MB | 推荐，VPS 上完全无 SDK |
+| **B. 在 VPS 上 `docker compose up -d --build`** | 约 426 MB | 峰值约 1.3 GB，清理后约 230 MB | 不想依赖 ghcr.io |
+| **C. 本地 `dotnet publish` 出 11 MB，scp 上去跑第 9 节方案** | 约 91 MB | 约 230 MB | 只想传 11 MB 产物 |
 
-方案 A 构建完成后，把不再需要的 SDK 镜像和构建缓存清掉：
+> 方案 A 就是 `docker-compose.yml` 的默认行为；方案 B 需要先把 compose 里的
+> `image:` 注释掉、改用注释中的 `build:` 段；方案 C 见第 9 节。
+
+只有方案 B 会在 VPS 上留下 SDK 镜像，构建完成后把不再需要的清掉：
 
 ```bash
 # 清构建缓存
@@ -263,43 +277,38 @@ docker system df        # 看实际占用
 ### 镜像地址
 
 ```
-ghcr.io/<你的GitHub用户名>/jttools:latest
+ghcr.io/yangye2/jttools:latest
 ```
 
-> ⚠️ **GHCR 的包默认是私有的**，即使仓库是公开的。VPS 拉取前要二选一：
->
-> **方式1：把包改成公开**（推荐，VPS 不用登录）
-> GitHub 头像 → `Your packages` → `jttools` → `Package settings` → `Danger Zone`
-> → `Change visibility` → `Public`
->
-> **方式2：在 VPS 上登录 ghcr.io**
+实测已确认这个包是**公开**的，VPS 上无需 `docker login` 就能拉取。
+当前可用标签：`latest`、`WebApi`、`sha-ff57d0d`。
+
+> 如果以后把包改回私有，VPS 拉取前要登录一次：
 > ```bash
 > # 令牌在 GitHub → Settings → Developer settings → Personal access tokens 创建，勾选 read:packages
-> echo <你的令牌> | docker login ghcr.io -u <你的GitHub用户名> --password-stdin
+> echo <你的令牌> | docker login ghcr.io -u yangye2 --password-stdin
 > ```
 
-### 用镜像部署（VPS 上不需要 SDK）
+### 用镜像部署
 
-把 `docker-compose.yml` 里的 `build:` 段换成 `image:`：
+`docker-compose.yml` **已经配好了**，`image:` 直接指向 ghcr.io，默认就是拉取模式：
 
 ```yaml
 services:
   jttools:
-    # build:
-    #   context: ./src
-    #   dockerfile: Dockerfile
-    image: ghcr.io/<你的GitHub用户名>/jttools:latest
-    # 其余部分（ports / environment / healthcheck / logging）保持不变
+    image: ghcr.io/yangye2/jttools:latest
 ```
-
-然后：
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-这样 VPS 上只下载约 102 MB，也不会留下 1 GB 的 SDK 构建镜像。
+VPS 上只下载约 102 MB，也不会留下 1 GB 的 SDK 构建镜像。
+
+> 如果要换成自己的仓库/用户名构建的镜像，修改 `.github/workflows/docker.yml`
+> 里的 `IMAGE_NAME`（默认取 `github.repository_owner`，会自动跟随仓库所有者）
+> 和 `docker-compose.yml` 里的 `image:` 即可。
 
 ### VPS 是 ARM 架构怎么办
 

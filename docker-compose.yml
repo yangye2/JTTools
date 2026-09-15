@@ -1,31 +1,39 @@
 # =============================================================================
 # JTTools 部署文件
 #
-# 用法（在 JTTools 仓库根目录执行）：
-#   docker compose up -d --build     # 首次构建并启动
+# 镜像由 GitHub Actions 自动构建并推送到 ghcr.io，这里直接拉取使用，
+# 所以 VPS 上不需要 .NET SDK，也不需要在服务器上编译。
+#
+# 用法（在仓库根目录执行）：
+#   docker compose pull              # 拉取最新镜像
+#   docker compose up -d             # 启动
 #   docker compose ps                # 查看状态（含健康检查结果）
 #   docker compose logs -f           # 实时日志
 #   docker compose restart           # 重启
 #   docker compose down              # 停止并删除容器
-#   docker compose up -d --build     # 更新代码后重新部署
 #
-# 构建上下文是 ./src（Dockerfile 和 .dockerignore 都在那个目录下）。
+# 更新到最新版本：
+#   docker compose pull && docker compose up -d
+#
+# 镜像构建流程见 .github/workflows/docker.yml
 # =============================================================================
 
 name: jttools
 
 services:
   jttools:
-    # ------------------------------ 构建 ------------------------------
-    build:
-      context: ./src
-      dockerfile: Dockerfile
-      args:
-        BUILD_CONFIGURATION: Release
+    # ------------------------------ 镜像 ------------------------------
+    # GitHub Actions 构建的镜像（公开，VPS 无需 docker login）
+    image: ghcr.io/yangye2/jttools:latest
 
-    # 如果镜像已推到仓库，可以删掉上面的 build 段，改成直接拉取：
-    # image: registry.example.com/jttools:1.0.0
-    image: jttools:latest
+    # 想在本机/服务器上自己编译镜像时，注释掉上面的 image，
+    # 改用下面这段，然后执行 docker compose up -d --build
+    # build:
+    #   context: ./src
+    #   dockerfile: Dockerfile
+    #   args:
+    #     BUILD_CONFIGURATION: Release
+
     container_name: jttools
 
     # ------------------------------ 运行 ------------------------------
