@@ -146,6 +146,119 @@ function renderDailyQuote() {
     $quote.prop("hidden", false);
 }
 
+/**
+ * 请求期间给按钮加个转圈并禁用，避免用户以为没点上而狂点
+ * @param {*} $btn 触发按钮
+ * @param {*} promise axios 返回的 Promise
+ */
+function withLoading($btn, promise) {
+    const original = $btn.html();
+
+    $btn.prop("disabled", true).html(
+        '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 解析中…'
+    );
+
+    return promise.finally(function () {
+        $btn.prop("disabled", false).html(original);
+    });
+}
+
+/**
+ * 出结果后滚动到结果区（只在结果还在屏幕下方时才滚，不打断已经看到的用户）
+ * @param {*} $target 结果区的 jQuery 对象
+ */
+function scrollToResult($target) {
+    if (!$target || $target.length === 0) {
+        return;
+    }
+
+    // 减掉固定导航栏的高度，别让结果被挡在栏下面
+    const top = $target.offset().top - 78;
+
+    if (top > window.scrollY + 40) {
+        window.scrollTo({ top: top, behavior: "smooth" });
+    }
+}
+
+/**
+ * 收集结果区里的文本，供「复制」按钮使用。
+ * 目标既可以是单个 <pre>，也可以是装着多个 <pre> 的容器（JT808 的折叠面板）。
+ */
+function collectResultText($btn) {
+    const $target = $($btn.attr("data-copy-target"));
+    const parts = [];
+
+    $target.each(function () {
+        if (this.tagName === "PRE") {
+            parts.push($(this).text());
+        } else {
+            $(this).find("pre").each(function () {
+                parts.push($(this).text());
+            });
+        }
+    });
+
+    return parts
+        .map(function (s) { return (s || "").replace(/\s+$/, ""); })
+        .filter(function (s) { return s.length > 0; })
+        .join("\n\n");
+}
+
+/**
+ * 复制按钮的临时状态反馈（成功 / 失败），1.6 秒后恢复原样
+ */
+function flashButton($btn, ok) {
+    if ($btn.data("flashing")) {
+        return;
+    }
+
+    const original = $btn.html();
+
+    $btn.data("flashing", true)
+        .removeClass("btn-outline-secondary")
+        .addClass(ok ? "btn-outline-success" : "btn-outline-danger")
+        .html(ok
+            ? '<i class="bi bi-check2"></i> 已复制'
+            : '<i class="bi bi-x-lg"></i> 复制失败');
+
+    setTimeout(function () {
+        $btn.removeClass("btn-outline-success btn-outline-danger")
+            .addClass("btn-outline-secondary")
+            .html(original)
+            .data("flashing", false);
+    }, 1600);
+}
+
+/**
+ * 记录每个输入框「上一次被自动填充的示例数据」。
+ * 切换协议版本时，只在这个框还是示例数据（或空白）的情况下才覆盖，
+ * 用户自己输入 / 粘贴的内容不会被冲掉。
+ */
+const autoFilledSamples = {};
+
+/**
+ * 把示例数据填进输入框，并记下「这是自动填的」
+ */
+function fillSample(selector, data) {
+    autoFilledSamples[selector] = data;
+    $(selector).val(data);
+}
+
+/**
+ * 输入框当前的内容能不能被示例数据覆盖？
+ * 空 → 可以；还等于上次自动填的示例 → 可以；否则说明用户改过 → 不可以。
+ */
+function canReplaceWithSample(selector) {
+    const current = ($(selector).val() || "").trim();
+
+    if (current === "") {
+        return true;
+    }
+
+    const last = (autoFilledSamples[selector] || "").trim();
+    return last !== "" && current === last;
+}
+
 $(document).ready(function () {
     const JT808HexData = "7E 02 00 00 26 12 34 56 78 90 12 00 7D 02 00 00 00 01 00 00 00 02 00 BA 7F 0E 07 E4 F1 1C 00 28 00 3C 00 00 18 10 15 10 10 10 01 04 00 00 00 64 02 02 00 7D 01 13 7E";
     const JT8082013ForceHexData = "7e0102400c01003000068109024a3130303330303030363831857e";
@@ -164,9 +277,9 @@ $(document).ready(function () {
     var navbarCollapse = new bootstrap.Collapse('#navbarCollapse', {
         toggle: false
     });
-    $("#JT808_Hex").val(JT808HexData);
-    $("#JT809_Hex").val(JT809HexData2011);
-    $("#JT19056_Hex").val(JT19056UpHexData);
+    fillSample("#JT808_Hex", JT808HexData);
+    fillSample("#JT809_Hex", JT809HexData2011);
+    fillSample("#JT19056_Hex", JT19056UpHexData);
     $("#JT905_Hex").val(JT905HexData);
     $("#JTSB_Hex").val(JTSBHexData);
     $("#JT1078_Hex").val(JT1078HexData);
@@ -234,18 +347,24 @@ $(document).ready(function () {
         else if ("JT808_GPS51" == protocolType) {
             hexData = JT808GPS51HexData;
         }
-        $("#JT808_Hex").val(hexData);
-        $("#JT808_Hex").autoHeight();
-        //$("#JT809_Result").text("");
+        // 用户已经输入 / 粘贴了自己的数据时不要冲掉，
+        // 只在他没改过（还是示例数据，或者已经清空）时才填示例
+        if (canReplaceWithSample("#JT808_Hex")) {
+            fillSample("#JT808_Hex", hexData);
+            $("#JT808_Hex").autoHeight();
+        }
     });
 
     $("#JT809_ProtocolType").on("change", function () {
         var selectedValue = $(this).val();
-        if (selectedValue == "2011") {
-            $("#JT809_Hex").val(JT809HexData2011);
-        } else {
-            $("#JT809_Hex").val(JT809HexData2019);
+        var hexData = (selectedValue == "2011") ? JT809HexData2011 : JT809HexData2019;
+
+        // 用户已经输入 / 粘贴了自己的数据时不要冲掉
+        if (canReplaceWithSample("#JT809_Hex")) {
+            fillSample("#JT809_Hex", hexData);
         }
+
+        // 协议版本换了，旧结果就失效了
         $("#JT809_Result").text("");
     });
 
@@ -260,11 +379,14 @@ $(document).ready(function () {
 
     $("#JT19056_ProtocolType").on("change", function () {
         var selectedValue = $(this).val();
-        if (selectedValue == "up") {
-            $("#JT19056_Hex").val(JT19056UpHexData);
-        } else {
-            $("#JT19056_Hex").val(JT19056DownHexData);
+        var hexData = (selectedValue == "up") ? JT19056UpHexData : JT19056DownHexData;
+
+        // 用户已经输入 / 粘贴了自己的数据时不要冲掉
+        if (canReplaceWithSample("#JT19056_Hex")) {
+            fillSample("#JT19056_Hex", hexData);
         }
+
+        // 上下行换了，旧结果就失效了
         $("#JT19056_Result").text("");
     });
 
@@ -291,12 +413,11 @@ $(document).ready(function () {
     });
 
     $("#JT808_Parse").on("click", function () {
-        axios.post("/JT808/Analyze",
+        withLoading($(this), axios.post("/JT808/Analyze",
             {
                 Hex: $("#JT808_Hex").val(),
                 ProtocolType: $("#JT808_ProtocolType").val()
-            }).then((res) => {
-                // console.debug(res);
+            })).then((res) => {
                 if (res.data.Code == 200) {
                     $('#JT808_Accordion_Result').html("");
                     if (res.data.Result.Packages) {
@@ -345,19 +466,31 @@ $(document).ready(function () {
                                 }
                             });
                         }
-                        $('#JT808_Accordion_Result div.accordion-collapse').addClass('show');
+                        // 只展开第一个，多包时结果区不会一下子拉得很长
+                        const $firstCollapse = $('#JT808_Accordion_Result div.accordion-collapse').first();
+                        $firstCollapse.addClass('show');
+                        $firstCollapse.prev('.accordion-header')
+                            .find('.accordion-button')
+                            .removeClass('collapsed')
+                            .attr('aria-expanded', 'true');
+
+                        scrollToResult($('#JT808_Accordion_Result'));
                     } else {
-                        $('#JT808_Accordion_Result').html("处理异常，请检测对应Hex数据包");
+                        $('#JT808_Accordion_Result').html('<div class="alert alert-warning mb-0">处理异常，请检测对应 Hex 数据包。</div>');
                     }
 
                 } else {
-                    $("#JT808_Accordion_Result").html(res.data.Message);
+                    $("#JT808_Accordion_Result").html('<div class="alert alert-warning mb-0">' + res.data.Message + '</div>');
                 }
+            })
+            .catch(function (err) {
+                console.error(err);
+                $("#JT808_Accordion_Result").html('<div class="alert alert-danger mb-0">请求失败，请检查网络后重试。</div>');
             });
     });
 
     $("#JT809_Parse").on("click", function () {
-        axios.post("/JT809/Analyze",
+        withLoading($(this), axios.post("/JT809/Analyze",
             {
                 Hex: $("#JT809_Hex").val(),
                 ProtocolType: $("#JT809_ProtocolType").val(),
@@ -365,76 +498,114 @@ $(document).ready(function () {
                 M1: parseInt($("#JT809_M1_Value").val()),
                 IA1: parseInt($("#JT809_IA1_Value").val()),
                 IC1: parseInt($("#JT809_IC1_Value").val()),
-            }).then((res) => {
-                console.debug(res);
+            })).then((res) => {
                 if (res.data.Code == 200) {
-                    console.debug(res.data.Result.JsonValue);
                     $("#JT809_Result").text(res.data.Result.JsonValue);
+                    scrollToResult($("#JT809_Result"));
                 } else {
                     $("#JT809_Result").text(res.data.Message);
                 }
+            })
+            .catch(function (err) {
+                console.error(err);
+                $("#JT809_Result").text("请求失败，请检查网络后重试。");
             });
     });
 
     $("#JT19056_Parse").on("click", function () {
-        axios.post("/JT19056/Analyze",
+        withLoading($(this), axios.post("/JT19056/Analyze",
             {
                 Hex: $("#JT19056_Hex").val(),
                 ProtocolType: $("#JT19056_ProtocolType").val()
-            }).then((res) => {
-                console.debug(res);
+            })).then((res) => {
                 if (res.data.Code == 200) {
-                    console.debug(res.data.Result.JsonValue);
                     $("#JT19056_Result").text(res.data.Result.JsonValue);
+                    scrollToResult($("#JT19056_Result"));
                 } else {
                     $("#JT19056_Result").text(res.data.Message);
                 }
+            })
+            .catch(function (err) {
+                console.error(err);
+                $("#JT19056_Result").text("请求失败，请检查网络后重试。");
             });
     });
 
     $("#JT905_Parse").on("click", function () {
-        axios.post("/JT905/Analyze",
+        withLoading($(this), axios.post("/JT905/Analyze",
             {
                 Hex: $("#JT905_Hex").val()
-            }).then((res) => {
-                console.debug(res);
+            })).then((res) => {
                 if (res.data.Code == 200) {
-                    console.debug(res.data.Result.JsonValue);
                     $("#JT905_Result").text(res.data.Result.JsonValue);
+                    scrollToResult($("#JT905_Result"));
                 } else {
                     $("#JT905_Result").text(res.data.Message);
                 }
+            })
+            .catch(function (err) {
+                console.error(err);
+                $("#JT905_Result").text("请求失败，请检查网络后重试。");
             });
     });
 
     $("#JTSB_Parse").on("click", function () {
-        axios.post("/JTActiveSafety/Analyze",
+        withLoading($(this), axios.post("/JTActiveSafety/Analyze",
             {
                 Hex: $("#JTSB_Hex").val()
-            }).then((res) => {
-                console.debug(res);
+            })).then((res) => {
                 if (res.data.Code == 200) {
-                    console.debug(res.data.Result.JsonValue);
                     $("#JTSB_Result").text(res.data.Result.JsonValue);
+                    scrollToResult($("#JTSB_Result"));
                 } else {
                     $("#JTSB_Result").text(res.data.Message);
                 }
+            })
+            .catch(function (err) {
+                console.error(err);
+                $("#JTSB_Result").text("请求失败，请检查网络后重试。");
             });
     });
 
     $("#JT1078_Parse").on("click", function () {
-        axios.post("/JT1078/Analyze",
+        withLoading($(this), axios.post("/JT1078/Analyze",
             {
                 Hex: $("#JT1078_Hex").val()
-            }).then((res) => {
-                console.debug(res);
+            })).then((res) => {
                 if (res.data.Code == 200) {
-                    console.debug(res.data.Result.JsonValue);
                     $("#JT1078_Result").text(res.data.Result.JsonValue);
+                    scrollToResult($("#JT1078_Result"));
                 } else {
                     $("#JT1078_Result").text(res.data.Message);
                 }
+            })
+            .catch(function (err) {
+                console.error(err);
+                $("#JT1078_Result").text("请求失败，请检查网络后重试。");
             });
+    });
+
+    // 「复制」按钮：用页面已经引入的 clipboard.js（它自带老浏览器 / 非 HTTPS 的兜底）
+    if (window.ClipboardJS) {
+        const resultClipboard = new ClipboardJS(".jt-copy-btn", {
+            text: function (trigger) {
+                return collectResultText($(trigger));
+            }
+        });
+
+        resultClipboard.on("success", function (e) {
+            e.clearSelection();
+            flashButton($(e.trigger), true);
+        });
+
+        resultClipboard.on("error", function (e) {
+            flashButton($(e.trigger), false);
+        });
+    }
+
+    // 「清空」按钮：清掉对应输入框并聚焦，方便直接粘贴下一包
+    $(document).on("click", ".jt-clear-btn", function () {
+        $($(this).attr("data-clear-target")).val("").trigger("focus");
     });
 
     // 页脚「每日经典语录」

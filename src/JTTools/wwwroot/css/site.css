@@ -3,14 +3,15 @@
    --------------------------------------------------------------------------
    依赖 Bootstrap 5.3.3，不使用任何前端构建工具。
    结构：
-     1. 设计变量
+     1. 设计变量（含深色模式）
      2. 基础与布局
      3. 顶部导航栏
      4. 表单与按钮
      5. 解析结果面板
      6. 折叠面板（JT808 解析结果）
      7. 页脚
-     8. 响应式
+     8. 兼容保留
+     9. 响应式
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -28,8 +29,43 @@
   --jt-surface: #ffffff;
   --jt-surface-2: #fbfcfe;
   --jt-border: #e4e8f0;
+  --jt-border-hover: #cfd8e6;
   --jt-text: #1b2330;
   --jt-text-muted: #6b7686;
+  --jt-placeholder: #a3adbd;
+
+  /* 解析结果里的正文颜色 */
+  --jt-pre-text: #24324a;
+
+  /* 滚动条 */
+  --jt-scroll-thumb: #c6cedb;
+  --jt-scroll-thumb-hover: #a9b4c4;
+
+  /* 结果徽章：每种状态一套「字色 / 底色 / 边框」 */
+  --jt-badge-primary-fg: #1d39c4;
+  --jt-badge-primary-bg: #f0f5ff;
+  --jt-badge-primary-bd: #adc6ff;
+  --jt-badge-secondary-fg: #531dab;
+  --jt-badge-secondary-bg: #f9f0ff;
+  --jt-badge-secondary-bd: #d3adf7;
+  --jt-badge-dark-fg: #666666;
+  --jt-badge-dark-bg: #00000014;
+  --jt-badge-dark-bd: #b9b8b8;
+  --jt-badge-light-fg: #000000;
+  --jt-badge-light-bg: #ffffff;
+  --jt-badge-light-bd: #d8d7d7;
+  --jt-badge-success-fg: #1a9c76;
+  --jt-badge-success-bg: #e8fbf4;
+  --jt-badge-success-bd: #a8e9d2;
+  --jt-badge-danger-fg: #cf2c3c;
+  --jt-badge-danger-bg: #fdeef0;
+  --jt-badge-danger-bd: #f5c2c7;
+  --jt-badge-warning-fg: #b8650a;
+  --jt-badge-warning-bg: #fff7e6;
+  --jt-badge-warning-bd: #ffd591;
+  --jt-badge-info-fg: #096dd9;
+  --jt-badge-info-bg: #e6f7ff;
+  --jt-badge-info-bd: #91d5ff;
 
   /* 圆角与阴影 */
   --jt-radius: 12px;
@@ -37,7 +73,10 @@
   --jt-shadow-sm: 0 1px 2px rgba(16, 24, 40, .05);
   --jt-shadow: 0 1px 3px rgba(16, 24, 40, .06), 0 10px 28px -12px rgba(16, 24, 40, .18);
 
-  /* 等宽字体：用于十六进制报文与解析结果 */
+  /* 字体 */
+  --jt-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+             "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+             "Helvetica Neue", Arial, sans-serif;
   --jt-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
              "Liberation Mono", "Courier New", monospace;
 
@@ -45,6 +84,60 @@
   --jt-header-h: 62px;
   /* 内容区最大宽度，避免在宽屏上被拉成一条 */
   --jt-content-w: 1100px;
+}
+
+/* 深色模式
+   --------------------------------------------------------------------------
+   html 上的 data-bs-theme 属性由 index.html 头部的一小段内联脚本设置
+   （跟随系统偏好，并且提前设置以避免页面「闪一下白」）。
+   Bootstrap 5.3 自带的组件会跟着这个属性变暗，这里只补齐自定义变量。 */
+[data-bs-theme="dark"] {
+  --jt-primary: #4d9bff;
+  --jt-primary-hover: #6cabff;
+  --jt-primary-soft: #16273f;
+  --jt-primary-border: #2f5c99;
+
+  --jt-bg: #0d1117;
+  --jt-surface: #161b22;
+  --jt-surface-2: #1b2230;
+  --jt-border: #2a3441;
+  --jt-border-hover: #3b4859;
+  --jt-text: #e6edf3;
+  --jt-text-muted: #9198a1;
+  --jt-placeholder: #6e7781;
+
+  --jt-pre-text: #c9d5e3;
+
+  --jt-scroll-thumb: #39424e;
+  --jt-scroll-thumb-hover: #4d5866;
+
+  --jt-badge-primary-fg: #79b0ff;
+  --jt-badge-primary-bg: #12294a;
+  --jt-badge-primary-bd: #24527f;
+  --jt-badge-secondary-fg: #c4a0f5;
+  --jt-badge-secondary-bg: #26193d;
+  --jt-badge-secondary-bd: #4b3570;
+  --jt-badge-dark-fg: #b6bdc7;
+  --jt-badge-dark-bg: #ffffff14;
+  --jt-badge-dark-bd: #3a4553;
+  --jt-badge-light-fg: #d7dee7;
+  --jt-badge-light-bg: #ffffff0f;
+  --jt-badge-light-bd: #3a4553;
+  --jt-badge-success-fg: #5fd6ab;
+  --jt-badge-success-bg: #0f2c25;
+  --jt-badge-success-bd: #21584a;
+  --jt-badge-danger-fg: #ff8a95;
+  --jt-badge-danger-bg: #341a1f;
+  --jt-badge-danger-bd: #6d3239;
+  --jt-badge-warning-fg: #f0b559;
+  --jt-badge-warning-bg: #33260f;
+  --jt-badge-warning-bd: #6b5220;
+  --jt-badge-info-fg: #6cc7f0;
+  --jt-badge-info-bg: #102b3a;
+  --jt-badge-info-bd: #255a73;
+
+  --jt-shadow-sm: 0 1px 2px rgba(0, 0, 0, .4);
+  --jt-shadow: 0 1px 3px rgba(0, 0, 0, .4), 0 10px 28px -12px rgba(0, 0, 0, .7);
 }
 
 /* --------------------------------------------------------------------------
@@ -68,9 +161,7 @@ body {
   min-height: 100vh;
   background: var(--jt-bg);
   color: var(--jt-text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-               "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-               "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--jt-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -94,7 +185,7 @@ body {
 /* 滚动条美化（结果面板里内容很长） */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #c6cedb transparent;
+  scrollbar-color: var(--jt-scroll-thumb) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -107,14 +198,14 @@ body {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #c6cedb;
+  background: var(--jt-scroll-thumb);
   border: 2px solid transparent;
   border-radius: 8px;
   background-clip: content-box;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #a9b4c4;
+  background: var(--jt-scroll-thumb-hover);
   background-clip: content-box;
 }
 
@@ -128,7 +219,6 @@ header .navbar {
               0 8px 24px -12px rgba(16, 24, 40, .6);
 }
 
-/* 品牌名左侧的小色块，纯 CSS 生成的 logo */
 .navbar-brand {
   display: inline-flex;
   align-items: center;
@@ -139,13 +229,19 @@ header .navbar {
   color: #fff !important;
 }
 
+/* 品牌名左侧的蓝色方块 + 定位图标（和 favicon.svg 是同一个视觉）。
+   里面必须带图形，否则一个空的蓝色圆角方块看着像个「已选中的复选框」。 */
 .navbar-brand::before {
   content: "";
   flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
-  background: linear-gradient(135deg, #5aa2ff, #1668dc);
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z'/%3E%3C/svg%3E"),
+                    linear-gradient(135deg, #5aa2ff, #1668dc);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 17px 17px, cover;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, .18) inset,
               0 2px 8px -2px rgba(22, 104, 220, .9);
 }
@@ -162,6 +258,12 @@ header .navbar {
   font-size: .95rem;
   white-space: nowrap;
   transition: background-color .18s ease, color .18s ease;
+}
+
+#menus > li > .nav-link > i {
+  margin-right: .38rem;
+  font-size: .95em;
+  opacity: .85;
 }
 
 #menus > li > .nav-link:hover,
@@ -184,14 +286,43 @@ header .navbar {
   box-shadow: 0 0 0 3px rgba(255, 255, 255, .18);
 }
 
-/* 内容区：为固定导航栏留出高度 */
+/* 内容区 */
 main {
+  /* 撑满剩余高度，让页脚始终贴在底部（原来是 flex-shrink-0） */
+  flex: 1 0 auto;
   padding-bottom: 2.5rem;
 }
 
 main > .container {
   max-width: var(--jt-content-w);
   padding: calc(var(--jt-header-h) + 26px) 16px 0;
+}
+
+/* 首页的标题与说明 */
+.jt-intro {
+  margin: 0 0 18px;
+  padding: 0 2px;
+}
+
+.jt-intro > h1 {
+  margin: 0 0 .5rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  color: var(--jt-text);
+}
+
+.jt-intro > p {
+  margin: 0;
+  max-width: 64rem;
+  color: var(--jt-text-muted);
+  font-size: .9rem;
+  line-height: 1.85;
+}
+
+.jt-intro b {
+  color: var(--jt-text);
+  font-weight: 600;
 }
 
 /* 每个工具的表单做成一张卡片，和背景拉开层次 */
@@ -232,7 +363,7 @@ main > .container > form {
 
 .form-control:hover:not(:disabled),
 .form-select:hover:not(:disabled) {
-  border-color: #cfd8e6;
+  border-color: var(--jt-border-hover);
 }
 
 .form-control:focus,
@@ -242,7 +373,7 @@ main > .container > form {
 }
 
 .form-control::placeholder {
-  color: #a3adbd;
+  color: var(--jt-placeholder);
 }
 
 .form-control:disabled,
@@ -294,23 +425,61 @@ textarea.form-control {
   box-shadow: 0 1px 4px -1px rgba(22, 104, 220, .8);
 }
 
-/* 「分析」按钮原本被 .row > * 拉满整行，看起来像一条蓝色横带 */
-main form .row > .btn[id$="_Parse"] {
+/* 按钮被禁用时（解析中）不要往上浮 */
+.btn-primary:disabled,
+.btn-primary.disabled {
+  background: var(--jt-primary);
+  opacity: .7;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 「分析」按钮原本被 .row > * 拉满整行，看起来像一条蓝色横带。
+   同一行的「清空」等次要按钮也一起处理。 */
+main form .row > .btn {
   flex: 0 0 auto;
   width: auto;
-  min-width: 136px;
+  min-width: 116px;
   padding-left: 1.1rem;
   padding-right: 1.1rem;
 }
 
+main form .row > .btn[id$="_Parse"] {
+  min-width: 136px;
+}
+
+/* 同一行里「分析」和「清空」之间留点间距（窄屏按钮通栏，不需要） */
+@media (min-width: 769px) {
+  main form .row > .btn + .btn {
+    margin-left: .5rem;
+  }
+}
+
 /* JT808 的分析按钮外面套了一层 mb-3，这里的 mb-3 交给外层控制 */
-main form .row > .btn[id$="_Parse"].mb-3 {
+main form .row > .btn.mb-3 {
   margin-bottom: 1rem !important;
 }
 
-/* Hex 工具那一排按钮 */
+/* JT808 的结果区想要一个「复制」按钮，它不在 form 里，单独给宽度 */
+.jt-result-head .btn {
+  min-width: 0;
+}
+
 .btn-group > .btn {
   border-radius: var(--jt-radius-sm) !important;
+}
+
+/* Hex 工具那一排：下拉框 + 按钮，改成 flex 工具栏，避免高度不齐 */
+.jt-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+}
+
+.jt-toolbar > .form-select {
+  width: auto;
+  min-width: 9rem;
 }
 
 /* 键盘输入的说明文字（JT808 的浮动 label） */
@@ -320,7 +489,7 @@ main form .row > .btn[id$="_Parse"].mb-3 {
 
 #JT808Parse .form-floating > label {
   padding-top: 14px;
-  color: #b8670a;
+  color: var(--jt-badge-warning-fg);
   font-weight: 600;
   font-size: .82rem;
   opacity: .95;
@@ -340,20 +509,46 @@ main form .row > .btn[id$="_Parse"].mb-3 {
 /* --------------------------------------------------------------------------
    5. 解析结果面板
    -------------------------------------------------------------------------- */
+/* 结果区头部：标题 + 复制按钮。没有结果时整条隐藏 */
+.jt-result-head {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin: .5rem 0;
+}
+
+/* 出了结果才显示（Bootstrap 5.3 支持 :has；老浏览器只是不显示复制按钮，
+   不影响解析功能） */
+.jt-result:has(pre:not(:empty)) > .jt-result-head {
+  display: flex;
+}
+
+.jt-result-title {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  color: var(--jt-text-muted);
+  font-size: .84rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.jt-result-title > i {
+  color: var(--jt-primary);
+  font-size: 1rem;
+}
+
 .pre {
   margin-top: .25rem;
+  /* 留出固定高度，内容少时页面不至于中间空一大片 */
+  min-height: 132px;
   background: var(--jt-surface);
   border: 1px solid var(--jt-border);
   border-left: 3px solid var(--jt-primary);
   border-radius: var(--jt-radius);
   box-shadow: var(--jt-shadow-sm);
   overflow: hidden;
-}
-
-/* 没有结果时不显示一个空边框盒子（Bootstrap 5.3 支持 :has）。
-   不支持 :has 的老浏览器只是维持原样，不影响功能。 */
-.pre:has(> pre:empty) {
-  display: none;
 }
 
 .pre > pre {
@@ -363,12 +558,47 @@ main form .row > .btn[id$="_Parse"].mb-3 {
   overflow: auto;
   background: transparent;
   border: 0;
-  color: #24324a;
+  color: var(--jt-pre-text);
   font-family: var(--jt-mono);
   font-size: .82rem;
   line-height: 1.8;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* 还没有结果时，用一个占位提示代替空框（纯 CSS 生成，不进 DOM，
+   所以 pre.text() 仍然是空的，复制逻辑不受影响） */
+.pre > pre:empty::before {
+  content: "解析结果会显示在这里";
+  display: block;
+  color: var(--jt-text-muted);
+  font-family: var(--jt-sans);
+  font-size: .85rem;
+  line-height: 1.6;
+  letter-spacing: .02em;
+  opacity: .75;
+}
+
+/* JT808 的结果是折叠面板而不是 .pre，空的时候也给它铺一块面板，
+   否则页面下半部分会空一大片。面板样式和 .pre 保持一致。 */
+#JT808_Accordion_Result:empty {
+  min-height: 132px;
+  padding: 16px 18px;
+  background: var(--jt-surface);
+  border: 1px solid var(--jt-border);
+  border-left: 3px solid var(--jt-primary);
+  border-radius: var(--jt-radius);
+  box-shadow: var(--jt-shadow-sm);
+}
+
+#JT808_Accordion_Result:empty::before {
+  content: "解析结果会显示在这里";
+  display: block;
+  color: var(--jt-text-muted);
+  font-family: var(--jt-sans);
+  font-size: .85rem;
+  letter-spacing: .02em;
+  opacity: .75;
 }
 
 /* --------------------------------------------------------------------------
@@ -431,12 +661,19 @@ main form .row > .btn[id$="_Parse"].mb-3 {
   overflow: auto;
   background: transparent;
   border: 0;
-  color: #24324a;
+  color: var(--jt-pre-text);
   font-family: var(--jt-mono);
   font-size: .82rem;
   line-height: 1.8;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* 解析失败时给个显眼的提示 */
+.jt-result .alert {
+  margin: 0;
+  border-radius: var(--jt-radius);
+  font-size: .88rem;
 }
 
 /* 结果里的标签徽章 */
@@ -453,53 +690,54 @@ main form .row > .btn[id$="_Parse"].mb-3 {
   letter-spacing: .01em;
 }
 
-/* 徽章配色：把原来的几种收敛成同一套明度，避免过亮刺眼 */
+/* 徽章配色：把原来的几种收敛成同一套明度，避免过亮刺眼。
+   深色模式走上面的变量覆盖，这里不用重复写。 */
 .text-bg-primary {
-  color: #1d39c4 !important;
-  background: #f0f5ff !important;
-  border-color: #adc6ff !important;
+  color: var(--jt-badge-primary-fg) !important;
+  background: var(--jt-badge-primary-bg) !important;
+  border-color: var(--jt-badge-primary-bd) !important;
 }
 
 .text-bg-secondary {
-  color: #531dab !important;
-  background: #f9f0ff !important;
-  border-color: #d3adf7 !important;
+  color: var(--jt-badge-secondary-fg) !important;
+  background: var(--jt-badge-secondary-bg) !important;
+  border-color: var(--jt-badge-secondary-bd) !important;
 }
 
 .text-bg-dark {
-  color: #666 !important;
-  background: #00000014 !important;
-  border-color: #b9b8b8 !important;
+  color: var(--jt-badge-dark-fg) !important;
+  background: var(--jt-badge-dark-bg) !important;
+  border-color: var(--jt-badge-dark-bd) !important;
 }
 
 .text-bg-light {
-  color: #000 !important;
-  background: #fff !important;
-  border-color: #d8d7d7 !important;
+  color: var(--jt-badge-light-fg) !important;
+  background: var(--jt-badge-light-bg) !important;
+  border-color: var(--jt-badge-light-bd) !important;
 }
 
 .text-bg-success {
-  color: #1a9c76 !important;
-  background: #e8fbf4 !important;
-  border-color: #a8e9d2 !important;
+  color: var(--jt-badge-success-fg) !important;
+  background: var(--jt-badge-success-bg) !important;
+  border-color: var(--jt-badge-success-bd) !important;
 }
 
 .text-bg-danger {
-  color: #cf2c3c !important;
-  background: #fdeef0 !important;
-  border-color: #f5c2c7 !important;
+  color: var(--jt-badge-danger-fg) !important;
+  background: var(--jt-badge-danger-bg) !important;
+  border-color: var(--jt-badge-danger-bd) !important;
 }
 
 .text-bg-warning {
-  color: #b8650a !important;
-  background: #fff7e6 !important;
-  border-color: #ffd591 !important;
+  color: var(--jt-badge-warning-fg) !important;
+  background: var(--jt-badge-warning-bg) !important;
+  border-color: var(--jt-badge-warning-bd) !important;
 }
 
 .text-bg-info {
-  color: #096dd9 !important;
-  background: #e6f7ff !important;
-  border-color: #91d5ff !important;
+  color: var(--jt-badge-info-fg) !important;
+  background: var(--jt-badge-info-bg) !important;
+  border-color: var(--jt-badge-info-bd) !important;
 }
 
 /* --------------------------------------------------------------------------
@@ -615,6 +853,13 @@ footer.footer .daily-quote-author:not(:empty)::before {
 /* --------------------------------------------------------------------------
    9. 响应式
    -------------------------------------------------------------------------- */
+/* 导航项带图标后整体会变宽，中等屏幕先藏掉图标，避免挤成两行 */
+@media screen and (max-width: 1199.98px) {
+  #menus > li > .nav-link > i {
+    display: none;
+  }
+}
+
 @media screen and (max-width: 768px) {
   header .navbar {
     padding: 10px 12px;
@@ -628,8 +873,12 @@ footer.footer .daily-quote-author:not(:empty)::before {
     padding: 16px 14px 2px;
   }
 
+  .jt-intro > h1 {
+    font-size: 1.2rem;
+  }
+
   /* 窄屏下按钮恢复通栏，方便点按 */
-  main form .row > .btn[id$="_Parse"] {
+  main form .row > .btn {
     width: 100%;
     min-width: 0;
   }

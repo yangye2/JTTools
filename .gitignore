@@ -332,3 +332,6 @@ ASALocalRun/
 
 # 本地安装的 .NET SDK（global.json 的 sdk.paths 会优先用它）
 .dotnet/
+
+# 本地截图临时目录（仅用于开发时肉眼比对界面）
+.shots/
