@@ -1,0 +1,57 @@
+name: .NET 构建
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: dotnet-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 编译 + 发布
+    runs-on: ubuntu-latest
+
+    # 关键：global.json 在 src/ 目录下，而 actions 默认工作目录是仓库根目录。
+    # 必须切到 src，否则 global.json 不生效（dotnet 只从当前目录往上找）。
+    defaults:
+      run:
+        working-directory: src
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      # 用 10.0.x 的最新 SDK。src/global.json 里配了 rollForward: latestFeature，
+      # 所以 10.0.1xx ~ 10.0.4xx 都能正常解析。
+      - name: 安装 .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: 环境信息
+        run: |
+          dotnet --info
+          echo "--- 本仓库 global.json ---"
+          cat global.json
+
+      - name: 还原依赖
+        run: dotnet restore JTTools/JTTools.csproj
+
+      - name: 编译（Release）
+        run: dotnet build JTTools/JTTools.csproj -c Release --no-restore
+
+      - name: 发布
+        run: dotnet publish JTTools/JTTools.csproj -c Release --no-restore -o ./publish
+
+      # 产物可用于 README 第 9 节的「只拷贝产物」部署方案
+      # 注意：upload-artifact 的 path 是相对仓库根目录的，不受上面 working-directory 影响
+      - name: 上传发布产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: JTTools-publish
+          path: src/publish/
+          retention-days: 7
+          if-no-files-found: error

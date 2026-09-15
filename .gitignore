@@ -329,3 +329,6 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 /src/.output
+
+# 本地安装的 .NET SDK（global.json 的 sdk.paths 会优先用它）
+.dotnet/

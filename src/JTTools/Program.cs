@@ -52,6 +52,9 @@ namespace JTTools
 
             builder.Services.AddOpenApiDocument();
 
+            // 容器/负载均衡健康检查探针
+            builder.Services.AddHealthChecks();
+
             builder.Services.AddCors(options =>
              {
                  options.AddPolicy("AnyCors", builder=> builder.AllowAnyMethod()
@@ -76,6 +79,9 @@ namespace JTTools
             });
 
             app.MapControllers();
+
+            // GET /health -> Healthy / Unhealthy，供 Docker HEALTHCHECK 使用
+            app.MapHealthChecks("/health");
 
             app.UseDefaultFiles();
 
