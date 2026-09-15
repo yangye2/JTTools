@@ -45,11 +45,15 @@ services:
 
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      # 这一行必须保留：容器内要监听 8080，否则会用 appsettings.json 里的 18889
-      ASPNETCORE_URLS: http://+:8080
       TZ: Asia/Shanghai
       # 排查问题时再打开，可以看更详细的日志
       # Logging__LogLevel__Default: Debug
+
+    # 容器内监听端口由镜像 ENTRYPOINT 的 --urls 决定（见 src/Dockerfile），默认 8080。
+    # ⚠️ **不要**用 ASPNETCORE_URLS 改端口：它会被 appsettings.json 里的
+    #    "urls": "http://*:18889;" 覆盖，容器会跑去找 18889，导致端口映射失效。
+    # 确实需要在容器里换端口时，取消下面注释，并同步修改上面的 ports 映射：
+    # command: ["dotnet", "JTTools.dll", "--urls", "http://+:8081"]
 
     # ---------------------------- 健康检查 ----------------------------
     # 依赖应用里的 GET /health 端点（见 src/JTTools/Program.cs 的 MapHealthChecks）

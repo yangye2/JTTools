@@ -79,25 +79,45 @@ docker compose logs -f
 
 ## 3. 端口说明
 
-容器内部统一监听 **8080**，宿主机对外仍是 **18889**（和原来的 systemd 部署保持一致）。
-需要换端口只改 `docker-compose.yml`：
+容器内部监听 **8080**，宿主机对外仍是 **18889**（和原来的 systemd 部署保持一致）。
+只改宿主机端口的话，改 `docker-compose.yml` 里 `ports` 左边那个数：
 
 ```yaml
 ports:
-  - "8080:8080"   # 改成宿主机 8080
+  - "8080:8080"   # 宿主机 8080 -> 容器 8080
 ```
 
-> `appsettings.json` 里写的是 `18889`，容器里用环境变量 `ASPNETCORE_URLS=http://+:8080`
-> 覆盖（环境变量优先级高于 appsettings.json），所以不要再单独去掉这个环境变量。
+### 为什么不能用 ASPNETCORE_URLS 指定端口
+
+`appsettings.json` 里写着 `"urls": "http://*:18889;"`，而 **`ASPNETCORE_URLS`
+属于「主机配置」，优先级低于 appsettings.json**，所以设了也不生效。本机实测（.NET 10）：
+
+| 配置方式 | 实际监听端口 |
+| --- | --- |
+| 什么都不设 | 18889（读 appsettings.json） |
+| `ASPNETCORE_URLS=http://+:8099` | **18889** ❌ 被忽略 |
+| `URLS=http://+:8099`（无 `ASPNETCORE_` 前缀） | 8099 ✅ |
+| 命令行 `--urls http://+:8099` | 8099 ✅ 优先级最高 |
+
+所以 `Dockerfile` 的 `ENTRYPOINT` 用的是命令行参数：
+
+```dockerfile
+ENTRYPOINT ["dotnet", "JTTools.dll", "--urls", "http://+:8080"]
+```
+
+> 这个坑很隐蔽：容器能正常启动、日志也没有报错，但端口映射是错的，
+> 外部访问不通，健康检查还会一直失败（它探的是 8080）。
+> **自查方法**：看日志里 `Now listening on:` 的端口号，必须和 `ports` 右边的数字一致。
 
 ## 4. 环境变量
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
 | `ASPNETCORE_ENVIRONMENT` | `Production` | 运行环境 |
-| `ASPNETCORE_URLS` | `http://+:8080` | 监听地址，勿随意删除 |
 | `TZ` | `Asia/Shanghai` | 容器时区 |
 | `Logging__LogLevel__Default` | `Information` | 调成 `Debug` 可看详细日志 |
+
+> 监听端口**不在**这里配，见第 3 节。
 
 ## 5. 常用运维命令
 
@@ -194,10 +214,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY scripts/healthcheck.sh /app/scripts/healthcheck.sh
 COPY publish/ ./
-ENV ASPNETCORE_URLS=http://+:8080 ASPNETCORE_ENVIRONMENT=Production TZ=Asia/Shanghai
+ENV ASPNETCORE_ENVIRONMENT=Production TZ=Asia/Shanghai
 EXPOSE 8080
 USER $APP_UID
-ENTRYPOINT ["dotnet", "JTTools.dll"]
+# 必须用 --urls：ASPNETCORE_URLS 会被 appsettings.json 的 "urls" 覆盖（见第 3 节）
+ENTRYPOINT ["dotnet", "JTTools.dll", "--urls", "http://+:8080"]
 ```
 
 本地发布命令（**不要**加 `-p:PublishTrimmed=true`，原因见常见问题）：

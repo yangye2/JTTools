@@ -7,7 +7,10 @@
 #
 # 构建：  docker build -t jttools:latest .
 # 运行：  docker run -d --name jttools -p 18889:8080 jttools:latest
-# 或：    docker compose up -d --build
+# 或：    docker compose up -d --build（需先在 docker-compose.yml 里打开 build 段）
+#
+# 常规部署直接拉取 CI 构建好的镜像，不需要本地构建：
+#         docker pull ghcr.io/yangye2/jttools:latest
 # ============================================================================
 
 # ------------------------------ 构建阶段 ------------------------------------
@@ -39,16 +42,20 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 
 LABEL org.opencontainers.image.title="JTTools" \
       org.opencontainers.image.description="JT808/JT809/JT1078/JT905/JT19056 道路运输车辆卫星定位协议在线解析工具" \
-      org.opencontainers.image.source="https://github.com/SmallChi/JTTools" \
+      org.opencontainers.image.source="https://github.com/yangye2/JTTools" \
       org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
 
-# 容器内统一监听 8080；注意 appsettings.json 里写的是 18889，
-# 这里用环境变量覆盖（环境变量优先级高于 appsettings.json）。
-# 宿主机端口通过 -p 18889:8080 或 compose 的 ports 映射，对外仍是 18889。
-ENV ASPNETCORE_URLS=http://+:8080 \
-    ASPNETCORE_ENVIRONMENT=Production \
+# 容器内统一监听 8080；宿主机端口通过 -p 18889:8080 或 compose 的 ports 映射，
+# 对外仍是 18889，和原来的 systemd 部署保持一致。
+#
+# ⚠️ 端口必须用下面 ENTRYPOINT 的 --urls 参数指定，不能用 ASPNETCORE_URLS：
+#    ASPNETCORE_URLS 属于「主机配置」，会被 appsettings.json 里的
+#    "urls": "http://*:18889;" 覆盖（已实测确认）。用了它容器会跑去监听 18889，
+#    导致 compose 的 18889:8080 映射失效、健康检查也一直失败。
+#    命令行参数优先级最高，所以这里用 --urls。
+ENV ASPNETCORE_ENVIRONMENT=Production \
     DOTNET_RUNNING_IN_CONTAINER=true \
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
     TZ=Asia/Shanghai
@@ -66,4 +73,5 @@ USER $APP_UID
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD ["timeout", "5", "bash", "/app/scripts/healthcheck.sh"]
 
-ENTRYPOINT ["dotnet", "JTTools.dll"]
+# --urls 会覆盖 appsettings.json 里的 "urls"，保证容器稳定监听 8080
+ENTRYPOINT ["dotnet", "JTTools.dll", "--urls", "http://+:8080"]
