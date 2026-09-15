@@ -369,27 +369,4 @@ $(document).ready(function () {
             });
     });
 
-    window.BnbCopyState = 0;
-    $("#BnbIdCopyBtn").on("click", function () {
-        if (window.BnbCopyState == 0) {
-            copyToClipboard($("#BnbValue").val());
-            window.BnbCopyState = 1;
-            $("#BnbIdCopyI").removeClass("bi-copy").addClass("bi-check2");
-            setTimeout(() => {
-                $("#BnbIdCopyI").removeClass("bi-check2").addClass("bi-copy");
-                window.BnbCopyState = 0;
-            }, 2000);
-        }
-    });
-
-    async function copyToClipboard(text) {
-        try {
-            await navigator.clipboard.writeText(text);
-            console.log('复制成功');
-        } catch (err) {
-            console.error('复制失败:', err);
-            // 降级到传统方法
-            fallbackCopy(text);
-        }
-    }
 });

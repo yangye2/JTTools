@@ -133,22 +133,6 @@ main>.container {
   background-color: #fafafa;
 }
 
-.giuhub-link {
-  display: block;
-}
-
-.giuhub-logo {
-  width: 45px;
-  height: 45px;
-}
-
-@media screen and (max-width:768px) {
-  .giuhub-logo {
-    width: 25px;
-    height: 25px;
-  }
-}
-
 .badge {
   border: 1px solid #d9d9d9;
   border-radius: 2px;
