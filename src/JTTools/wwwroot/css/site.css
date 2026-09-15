@@ -524,6 +524,41 @@ footer.footer a:hover {
   color: var(--jt-primary);
 }
 
+/* 每日经典语录 */
+footer.footer .daily-quote {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .1rem .45rem;
+  max-width: 62rem;
+  margin: 0 auto;
+  line-height: 1.75;
+}
+
+footer.footer .daily-quote > i {
+  color: var(--jt-primary);
+  opacity: .5;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+footer.footer .daily-quote-text {
+  color: var(--jt-text);
+  font-size: .86rem;
+  letter-spacing: .02em;
+}
+
+footer.footer .daily-quote-author {
+  color: var(--jt-text-muted);
+  font-size: .78rem;
+  white-space: nowrap;
+}
+
+footer.footer .daily-quote-author:not(:empty)::before {
+  content: "—— ";
+}
+
 /* --------------------------------------------------------------------------
    8. 兼容保留：产品推广模块（当前页面未启用，保留以便将来恢复）
    -------------------------------------------------------------------------- */
