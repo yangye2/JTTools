@@ -21,17 +21,23 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 # 1) 先只拷贝工程文件，让 NuGet 还原这一步能被 Docker 层缓存复用
-#    （只要 csproj 没变，改代码就不会重新下载依赖，VPS 上能省很多时间）
+#    （只要 csproj 没变，改代码就不会重新下载依赖）
+#
+# 注意：这里刻意**不用** RUN --mount=type=cache 挂载 /root/.nuget/packages。
+# cache mount 的内容不属于镜像层，而 restore 这一层会被 Docker 层缓存命中；
+# 一旦命中，restore 命令不会真的执行，挂载点里就是空的或残缺的包，
+# 后面 --no-restore 的 publish 就会报：
+#   error NETSDK1064: Package X was not found. It might have been deleted since NuGet restore.
+# （CI 上已经踩过一次，因为 GHA 的 10GB 缓存上限会挤掉部分包）
+# 让包直接落在镜像层里，层缓存命中时包就在，两边状态永远一致。
 COPY global.json ./
 COPY JTTools/JTTools.csproj JTTools/
-RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet restore JTTools/JTTools.csproj
+RUN dotnet restore JTTools/JTTools.csproj
 
 # 2) 再拷贝全部源码（bin/obj/.git 已被 .dockerignore 排除）
 COPY . .
 
-RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet publish JTTools/JTTools.csproj \
+RUN dotnet publish JTTools/JTTools.csproj \
         -c $BUILD_CONFIGURATION \
         -o /app/publish \
         --no-restore \

@@ -194,15 +194,20 @@ server {
 `dotnet restore` 加一个镜像源参数，例如：
 
 ```dockerfile
-RUN --mount=type=cache,target=/root/.nuget/packages \
-    dotnet restore JTTools/JTTools.csproj \
+RUN dotnet restore JTTools/JTTools.csproj \
         --source https://api.nuget.org/v3/index.json \
         --source https://mirrors.cloud.tencent.com/nuget/
 ```
 
 > 注意：`Dockerfile` 刻意**没有**写 `# syntax=docker/dockerfile:1` 指令，
 > 目的是避免构建时还要去 Docker Hub 拉取 frontend 镜像（国内经常拉不动）。
-> `RUN --mount=type=cache` 由 Docker 自带的 BuildKit 支持，Docker 20.10+ 均可。
+>
+> 同样也不要用 `RUN --mount=type=cache,target=/root/.nuget/packages`：
+> cache mount 的内容不属于镜像层，而 restore 那一层会被层缓存命中；
+> 一旦命中，restore 就不会真的执行，挂载点里是空的或残缺的包，
+> 后面 `--no-restore` 的 publish 会报
+> `error NETSDK1064: Package ... was not found. It might have been deleted since NuGet restore.`
+> 这个坑在 CI 上真实踩过一次（GHA 的 10GB 缓存上限会挤掉部分包）。
 
 ## 9. 可选：小内存 VPS 的「只拷贝产物」方案
 
