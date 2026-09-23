@@ -42,9 +42,15 @@ namespace JTTools.Controllers
         {
             ResultDto<JT1078AnalyzeResultDto> result = new ResultDto<JT1078AnalyzeResultDto>();
             result.Result = new JT1078AnalyzeResultDto();
+            if (string.IsNullOrWhiteSpace(request.Hex))
+            {
+                result.Fail("Hex 数据不能为空");
+                return result;
+            }
+
             try
             {
-                var data = request.Hex.ToHexBytes();
+                var data = request.Hex.Trim().ToHexBytes();
                 result.Result.JsonValue = serializer.Analyze(data, options: JTJsonWriterOptions.Instance);
             }
             catch (Exception ex)

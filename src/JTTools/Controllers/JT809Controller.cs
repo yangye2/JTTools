@@ -66,9 +66,15 @@ namespace JTTools.Controllers
         {
             ResultDto<JT809AnalyzeResultDto> result = new ResultDto<JT809AnalyzeResultDto>();
             result.Result = new JT809AnalyzeResultDto();
+            if (string.IsNullOrWhiteSpace(request.Hex))
+            {
+                result.Fail("Hex 数据不能为空");
+                return result;
+            }
+
             try
             {
-                var data = request.Hex.ToHexBytes();
+                var data = request.Hex.Trim().ToHexBytes();
                 var encryptOptions = new JT809EncryptOptions();
                 encryptOptions.M1 = (uint)request.M1;
                 encryptOptions.IC1 = (uint)request.IC1;

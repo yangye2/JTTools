@@ -39,9 +39,15 @@ namespace JTTools.Controllers
         {
             ResultDto<JT19056AnalyzeResultDto> result = new ResultDto<JT19056AnalyzeResultDto>();
             result.Result = new JT19056AnalyzeResultDto();
+            if (string.IsNullOrWhiteSpace(request.Hex))
+            {
+                result.Fail("Hex 数据不能为空");
+                return result;
+            }
+
             try
             {
-                var data = request.Hex.ToHexBytes();
+                var data = request.Hex.Trim().ToHexBytes();
                 switch (request.ProtocolType)
                 {
                     case "up":

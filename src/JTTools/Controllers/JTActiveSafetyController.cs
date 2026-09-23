@@ -24,9 +24,15 @@ namespace JTTools.Controllers
         {
             ResultDto<JTActiveSafetyAnalyzeResultDto> result = new ResultDto<JTActiveSafetyAnalyzeResultDto>();
             result.Result = new JTActiveSafetyAnalyzeResultDto();
+            if (string.IsNullOrWhiteSpace(request.Hex))
+            {
+                result.Fail("Hex 数据不能为空");
+                return result;
+            }
+
             try
             {
-                var data = request.Hex.ToHexBytes();
+                var data = request.Hex.Trim().ToHexBytes();
                 result.Result.JsonValue = JTActiveSafetySerializer.Analyze(data, options: JTJsonWriterOptions.Instance);
             }
             catch (Exception ex)

@@ -90,11 +90,12 @@ namespace JTTools.Controllers
         {
             ResultDto<JT808AnalyzeResultDto> result = new ResultDto<JT808AnalyzeResultDto>();
             result.Result = new JT808AnalyzeResultDto();
-            if (string.IsNullOrEmpty(request.Hex)) 
+            if (string.IsNullOrWhiteSpace(request.Hex))
             {
-                result.Fail("hex数据不为空");
+                result.Fail("Hex 数据不能为空");
                 return result;
             }
+            request.Hex = request.Hex.Trim();
             if (string.IsNullOrEmpty(request.ProtocolType))
             {
                 result.Fail("请选择对应的版本类型");

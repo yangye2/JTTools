@@ -259,6 +259,24 @@ function canReplaceWithSample(selector) {
     return last !== "" && current === last;
 }
 
+function readHex(selector) {
+    return ($(selector).val() || "").trim();
+}
+
+function showHexRequired($target) {
+    const message = "请先输入 Hex 数据。";
+    if ($target.is("textarea, input")) {
+        $target.val(message);
+        return;
+    }
+    if ($target.is("#JT808_Accordion_Result")) {
+        $target.empty().append($("<div>", { "class": "alert alert-warning mb-0", text: message }));
+        return;
+    }
+    $target.text(message);
+}
+
+
 $(document).ready(function () {
     const JT808HexData = "7E 02 00 00 26 12 34 56 78 90 12 00 7D 02 00 00 00 01 00 00 00 02 00 BA 7F 0E 07 E4 F1 1C 00 28 00 3C 00 00 18 10 15 10 10 10 01 04 00 00 00 64 02 02 00 7D 01 13 7E";
     const JT8082013ForceHexData = "7e0102400c01003000068109024a3130303330303030363831857e";
@@ -391,8 +409,14 @@ $(document).ready(function () {
     });
 
     $("#HexToolsConvert").on("click", function () {
+        const raw = readHex("#HexTools");
+        if (!raw) {
+            $("#HexToolsResult").val("请先输入 Hex 数据。");
+            $("#HexTools").trigger("focus");
+            return;
+        }
         let encoding = $("#HexToolsEncoding").val();
-        var hexLines = $("#HexTools").val().split('\n');
+        var hexLines = raw.split('\n');
         var hexStr = "";
         if (hexLines) {
             for (var i = 0; i < hexLines.length; i++) {
@@ -413,9 +437,15 @@ $(document).ready(function () {
     });
 
     $("#JT808_Parse").on("click", function () {
+        const hex = readHex("#JT808_Hex");
+        if (!hex) {
+            showHexRequired($("#JT808_Accordion_Result"));
+            $("#JT808_Hex").trigger("focus");
+            return;
+        }
         withLoading($(this), axios.post("/JT808/Analyze",
             {
-                Hex: $("#JT808_Hex").val(),
+                Hex: hex,
                 ProtocolType: $("#JT808_ProtocolType").val()
             })).then((res) => {
                 if (res.data.Code == 200) {
@@ -490,9 +520,15 @@ $(document).ready(function () {
     });
 
     $("#JT809_Parse").on("click", function () {
+        const hex = readHex("#JT809_Hex");
+        if (!hex) {
+            showHexRequired($("#JT809_Result"));
+            $("#JT809_Hex").trigger("focus");
+            return;
+        }
         withLoading($(this), axios.post("/JT809/Analyze",
             {
-                Hex: $("#JT809_Hex").val(),
+                Hex: hex,
                 ProtocolType: $("#JT809_ProtocolType").val(),
                 IsEncrypt: $("#JT809_EncryptType").val() != "none",
                 M1: parseInt($("#JT809_M1_Value").val()),
@@ -513,9 +549,15 @@ $(document).ready(function () {
     });
 
     $("#JT19056_Parse").on("click", function () {
+        const hex = readHex("#JT19056_Hex");
+        if (!hex) {
+            showHexRequired($("#JT19056_Result"));
+            $("#JT19056_Hex").trigger("focus");
+            return;
+        }
         withLoading($(this), axios.post("/JT19056/Analyze",
             {
-                Hex: $("#JT19056_Hex").val(),
+                Hex: hex,
                 ProtocolType: $("#JT19056_ProtocolType").val()
             })).then((res) => {
                 if (res.data.Code == 200) {
@@ -532,9 +574,15 @@ $(document).ready(function () {
     });
 
     $("#JT905_Parse").on("click", function () {
+        const hex = readHex("#JT905_Hex");
+        if (!hex) {
+            showHexRequired($("#JT905_Result"));
+            $("#JT905_Hex").trigger("focus");
+            return;
+        }
         withLoading($(this), axios.post("/JT905/Analyze",
             {
-                Hex: $("#JT905_Hex").val()
+                Hex: hex
             })).then((res) => {
                 if (res.data.Code == 200) {
                     $("#JT905_Result").text(res.data.Result.JsonValue);
@@ -550,9 +598,15 @@ $(document).ready(function () {
     });
 
     $("#JTSB_Parse").on("click", function () {
+        const hex = readHex("#JTSB_Hex");
+        if (!hex) {
+            showHexRequired($("#JTSB_Result"));
+            $("#JTSB_Hex").trigger("focus");
+            return;
+        }
         withLoading($(this), axios.post("/JTActiveSafety/Analyze",
             {
-                Hex: $("#JTSB_Hex").val()
+                Hex: hex
             })).then((res) => {
                 if (res.data.Code == 200) {
                     $("#JTSB_Result").text(res.data.Result.JsonValue);
@@ -568,9 +622,15 @@ $(document).ready(function () {
     });
 
     $("#JT1078_Parse").on("click", function () {
+        const hex = readHex("#JT1078_Hex");
+        if (!hex) {
+            showHexRequired($("#JT1078_Result"));
+            $("#JT1078_Hex").trigger("focus");
+            return;
+        }
         withLoading($(this), axios.post("/JT1078/Analyze",
             {
-                Hex: $("#JT1078_Hex").val()
+                Hex: hex
             })).then((res) => {
                 if (res.data.Code == 200) {
                     $("#JT1078_Result").text(res.data.Result.JsonValue);
