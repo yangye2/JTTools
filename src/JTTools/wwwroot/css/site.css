@@ -398,6 +398,43 @@ textarea.form-control {
   font-size: .85rem;
 }
 
+/* 校验失败的红色边框与错误提示（配合 site.js 的 showInvalid / clearInvalid）
+   不用 Bootstrap 自带的 .invalid-feedback，因为它依赖兄弟选择器，
+   在 form-floating / input-group 结构里经常显示不出来；这里自己控制。 */
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: var(--bs-danger, #dc3545);
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+  border-color: var(--bs-danger, #dc3545);
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, .15);
+}
+
+.jt-invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: .35rem;
+  font-size: .85rem;
+  color: var(--bs-danger, #dc3545);
+}
+
+[data-bs-theme="dark"] .form-control.is-invalid,
+[data-bs-theme="dark"] .form-select.is-invalid {
+  border-color: #ff8a95;
+}
+
+[data-bs-theme="dark"] .form-control.is-invalid:focus,
+[data-bs-theme="dark"] .form-select.is-invalid:focus {
+  border-color: #ff8a95;
+  box-shadow: 0 0 0 3px rgba(255, 138, 149, .18);
+}
+
+[data-bs-theme="dark"] .jt-invalid-feedback {
+  color: #ff8a95;
+}
+
 .btn {
   border-radius: var(--jt-radius-sm);
   font-weight: 500;

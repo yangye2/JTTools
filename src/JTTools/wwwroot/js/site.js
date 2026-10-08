@@ -263,17 +263,80 @@ function readHex(selector) {
     return ($(selector).val() || "").trim();
 }
 
-function showHexRequired($target) {
-    const message = "请先输入 Hex 数据。";
-    if ($target.is("textarea, input")) {
-        $target.val(message);
-        return;
+/**
+ * 输入验证辅助：给元素标红并在其容器内追加一条错误提示
+ * （不依赖 Bootstrap 的兄弟选择器，form-floating / input-group 里都能正常显示）
+ */
+function showInvalid($element, message) {
+    clearInvalid($element);
+    $element.addClass("is-invalid");
+    $element.closest(".mb-3, .form-floating, .input-group, .row").first()
+        .children(".jt-invalid-feedback").remove();
+    $element.closest(".mb-3, .form-floating, .input-group, .row").first()
+        .append($("<div>", { "class": "jt-invalid-feedback", text: message }));
+    $element.trigger("focus");
+}
+
+/**
+ * 清除元素的错误状态
+ */
+function clearInvalid($element) {
+    $element.removeClass("is-invalid");
+    $element.closest(".mb-3, .form-floating, .input-group, .row").first()
+        .children(".jt-invalid-feedback").remove();
+}
+
+/**
+ * 校验 Hex 输入：非空、每行（多行分包）去除空白后均为合法十六进制且偶数长度
+ * @returns {boolean} 通过返回 true，否则已显示错误并返回 false
+ */
+function validateHexInput($input) {
+    const raw = ($input.val() || "").trim();
+    if (!raw) {
+        showInvalid($input, "请先输入 Hex 数据。");
+        return false;
     }
-    if ($target.is("#JT808_Accordion_Result")) {
-        $target.empty().append($("<div>", { "class": "alert alert-warning mb-0", text: message }));
-        return;
+    const lines = raw.split("\n").map(s => s.trim()).filter(s => s.length > 0);
+    for (let i = 0; i < lines.length; i++) {
+        const compact = lines[i].replace(/\s+/g, "");
+        if (compact.length % 2 !== 0) {
+            showInvalid($input, "第 " + (i + 1) + " 行 Hex 长度为奇数，必须是偶数个十六进制字符。");
+            return false;
+        }
+        if (!/^[0-9a-fA-F]+$/.test(compact)) {
+            showInvalid($input, "第 " + (i + 1) + " 行包含非十六进制字符，只允许 0-9、A-F 和空白分隔。");
+            return false;
+        }
     }
-    $target.text(message);
+    clearInvalid($input);
+    return true;
+}
+
+/**
+ * 校验整数输入：非空、整数、在 [min, max] 范围内
+ */
+function validateNumber($input, min, max) {
+    const raw = ($input.val() || "").trim();
+    const val = Number(raw);
+    if (raw === "" || !Number.isInteger(val) || val < min || val > max) {
+        showInvalid($input, "请输入 " + min + " ~ " + max + " 之间的整数。");
+        return false;
+    }
+    clearInvalid($input);
+    return true;
+}
+
+/**
+ * JT809 加密报文时校验 M1 / IA1 / IC1（JT809 协议里都是 uint32）
+ */
+function validateJT809EncryptParams() {
+    if ($("#JT809_EncryptType").val() === "none") {
+        return true;
+    }
+    const okM1 = validateNumber($("#JT809_M1_Value"), 0, 4294967295);
+    const okIA1 = validateNumber($("#JT809_IA1_Value"), 0, 4294967295);
+    const okIC1 = validateNumber($("#JT809_IC1_Value"), 0, 4294967295);
+    return okM1 && okIA1 && okIC1;
 }
 
 
@@ -409,12 +472,10 @@ $(document).ready(function () {
     });
 
     $("#HexToolsConvert").on("click", function () {
-        const raw = readHex("#HexTools");
-        if (!raw) {
-            $("#HexToolsResult").val("请先输入 Hex 数据。");
-            $("#HexTools").trigger("focus");
+        if (!validateHexInput($("#HexTools"))) {
             return;
         }
+        const raw = readHex("#HexTools");
         let encoding = $("#HexToolsEncoding").val();
         var hexLines = raw.split('\n');
         var hexStr = "";
@@ -437,12 +498,10 @@ $(document).ready(function () {
     });
 
     $("#JT808_Parse").on("click", function () {
-        const hex = readHex("#JT808_Hex");
-        if (!hex) {
-            showHexRequired($("#JT808_Accordion_Result"));
-            $("#JT808_Hex").trigger("focus");
+        if (!validateHexInput($("#JT808_Hex"))) {
             return;
         }
+        const hex = readHex("#JT808_Hex");
         withLoading($(this), axios.post("/JT808/Analyze",
             {
                 Hex: hex,
@@ -520,12 +579,13 @@ $(document).ready(function () {
     });
 
     $("#JT809_Parse").on("click", function () {
-        const hex = readHex("#JT809_Hex");
-        if (!hex) {
-            showHexRequired($("#JT809_Result"));
-            $("#JT809_Hex").trigger("focus");
+        if (!validateHexInput($("#JT809_Hex"))) {
             return;
         }
+        if (!validateJT809EncryptParams()) {
+            return;
+        }
+        const hex = readHex("#JT809_Hex");
         withLoading($(this), axios.post("/JT809/Analyze",
             {
                 Hex: hex,
@@ -549,12 +609,10 @@ $(document).ready(function () {
     });
 
     $("#JT19056_Parse").on("click", function () {
-        const hex = readHex("#JT19056_Hex");
-        if (!hex) {
-            showHexRequired($("#JT19056_Result"));
-            $("#JT19056_Hex").trigger("focus");
+        if (!validateHexInput($("#JT19056_Hex"))) {
             return;
         }
+        const hex = readHex("#JT19056_Hex");
         withLoading($(this), axios.post("/JT19056/Analyze",
             {
                 Hex: hex,
@@ -574,12 +632,10 @@ $(document).ready(function () {
     });
 
     $("#JT905_Parse").on("click", function () {
-        const hex = readHex("#JT905_Hex");
-        if (!hex) {
-            showHexRequired($("#JT905_Result"));
-            $("#JT905_Hex").trigger("focus");
+        if (!validateHexInput($("#JT905_Hex"))) {
             return;
         }
+        const hex = readHex("#JT905_Hex");
         withLoading($(this), axios.post("/JT905/Analyze",
             {
                 Hex: hex
@@ -598,12 +654,10 @@ $(document).ready(function () {
     });
 
     $("#JTSB_Parse").on("click", function () {
-        const hex = readHex("#JTSB_Hex");
-        if (!hex) {
-            showHexRequired($("#JTSB_Result"));
-            $("#JTSB_Hex").trigger("focus");
+        if (!validateHexInput($("#JTSB_Hex"))) {
             return;
         }
+        const hex = readHex("#JTSB_Hex");
         withLoading($(this), axios.post("/JTActiveSafety/Analyze",
             {
                 Hex: hex
@@ -622,12 +676,10 @@ $(document).ready(function () {
     });
 
     $("#JT1078_Parse").on("click", function () {
-        const hex = readHex("#JT1078_Hex");
-        if (!hex) {
-            showHexRequired($("#JT1078_Result"));
-            $("#JT1078_Hex").trigger("focus");
+        if (!validateHexInput($("#JT1078_Hex"))) {
             return;
         }
+        const hex = readHex("#JT1078_Hex");
         withLoading($(this), axios.post("/JT1078/Analyze",
             {
                 Hex: hex
@@ -663,9 +715,16 @@ $(document).ready(function () {
         });
     }
 
-    // 「清空」按钮：清掉对应输入框并聚焦，方便直接粘贴下一包
+    // 「清空」按钮：清掉对应输入框并聚焦，同时清除残留的错误提示
     $(document).on("click", ".jt-clear-btn", function () {
-        $($(this).attr("data-clear-target")).val("").trigger("focus");
+        const $target = $($(this).attr("data-clear-target"));
+        $target.val("").trigger("focus");
+        clearInvalid($target);
+    });
+
+    // 用户一旦重新输入，立刻清除红色错误状态，避免提示一直挂在那
+    $(document).on("input change", ".form-control", function () {
+        clearInvalid($(this));
     });
 
     // 页脚「每日经典语录」
