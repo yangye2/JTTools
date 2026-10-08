@@ -1,4 +1,25 @@
 # =============================================================================
+# 源代码统一 UTF-8 编码
+#
+# 曾经踩过的坑：JT808Controller.cs / JT809Controller.cs 被某个 GBK 编码的
+# 编辑器保存过，而 Roslyn 默认按 UTF-8 读源文件（无 BOM 时），导致编译进
+# DLL 的中文字符串全成乱码（接口返回 "Hex ���ݲ���Ϊ��"）。
+#
+# working-tree-encoding=UTF-8：检出到工作区时强制转成 UTF-8；
+# 需要配合 eol 声明（否则该属性会不生效），这里顺便把 .cs 也钉成 LF。
+# =============================================================================
+
+*.cs         text working-tree-encoding=UTF-8 eol=lf
+*.csproj     text working-tree-encoding=UTF-8 eol=lf
+*.sln        text working-tree-encoding=UTF-8 eol=lf
+*.json       text working-tree-encoding=UTF-8 eol=lf
+*.js         text working-tree-encoding=UTF-8 eol=lf
+*.css        text working-tree-encoding=UTF-8 eol=lf
+*.html       text working-tree-encoding=UTF-8 eol=lf
+*.yml        text working-tree-encoding=UTF-8 eol=lf
+*.yaml       text working-tree-encoding=UTF-8 eol=lf
+
+# =============================================================================
 # 换行符统一为 LF
 #
 # 这些文件会被拷进 Linux 容器里执行，如果带 CRLF 会直接报错：

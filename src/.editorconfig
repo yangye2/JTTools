@@ -1,0 +1,46 @@
+# =============================================================================
+# 编辑器配置（VS / VS Code / Rider / JetBrains 均原生支持）
+#
+# 背景：JT808Controller.cs / JT809Controller.cs 曾被 GBK 编码的编辑器保存过，
+# 而 Roslyn 默认按 UTF-8 读源文件（无 BOM），导致编译进 DLL 的中文全成乱码。
+# charset = utf-8 会让支持的编辑器在保存时自动转成 UTF-8，从源头杜绝复发。
+#
+# .editorconfig 管编辑器保存行为，.gitattributes 管 git 检出行为，两者互补。
+# =============================================================================
+
+root = true
+
+# 所有文件默认
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C# / VB 源代码
+[*.{cs,vb}]
+indent_style = space
+indent_size = 4
+
+# 项目文件 / JSON / YAML
+[*.{csproj,vbproj,sln,json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# 前端（本仓库前端无构建工具，保持现有风格）
+[*.{js,css,html}]
+indent_style = space
+indent_size = 4
+
+# XML 文档
+[*.xml]
+indent_style = space
+indent_size = 2
+
+# Windows 批处理必须是 CRLF，否则可能无法执行
+[*.bat]
+end_of_line = crlf
+
+# Markdown 里的行尾空格有时是刻意换行，不裁
+[*.md]
+trim_trailing_whitespace = false

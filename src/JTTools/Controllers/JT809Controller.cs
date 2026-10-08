@@ -68,7 +68,7 @@ namespace JTTools.Controllers
             result.Result = new JT809AnalyzeResultDto();
             if (string.IsNullOrWhiteSpace(request.Hex))
             {
-                result.Fail("Hex Êı¾İ²»ÄÜÎª¿Õ");
+                result.Fail("Hex æ•°æ®ä¸èƒ½ä¸ºç©º");
                 return result;
             }
 
@@ -110,7 +110,7 @@ namespace JTTools.Controllers
                         }
                         break;
                     default:
-                        result.Error("ÊäÈë°æ±¾ºÅÓĞÎğ");
+                        result.Error("è¾“å…¥ç‰ˆæœ¬å·æœ‰è¯¯");
                         result.Result.JsonValue = "";
                         break;
                 }

@@ -92,13 +92,13 @@ namespace JTTools.Controllers
             result.Result = new JT808AnalyzeResultDto();
             if (string.IsNullOrWhiteSpace(request.Hex))
             {
-                result.Fail("Hex Êı¾İ²»ÄÜÎª¿Õ");
+                result.Fail("Hex æ•°æ®ä¸èƒ½ä¸ºç©º");
                 return result;
             }
             request.Hex = request.Hex.Trim();
             if (string.IsNullOrEmpty(request.ProtocolType))
             {
-                result.Fail("ÇëÑ¡Ôñ¶ÔÓ¦µÄ°æ±¾ÀàĞÍ");
+                result.Fail("è¯·é€‰æ‹©å¯¹åº”çš„ç‰ˆæœ¬ç±»å‹");
                 return result;
             }
             SortedList<int, JT808HeaderPackage> sort = new SortedList<int, JT808HeaderPackage>();
@@ -121,7 +121,7 @@ namespace JTTools.Controllers
                         Encrypt = headerPackage.Header.MessageBodyProperty.Encrypt != JT808.Protocol.Enums.JT808EncryptMethod.None,
                         MsgNum = headerPackage.Header.MsgNum
                     };
-                    //´¦Àí·Ö°ü
+                    //å¤„ç†åˆ†åŒ…
                     if (headerPackage.Header.MessageBodyProperty.IsPackage)
                     {
                         total = headerPackage.Header.PackgeCount;
@@ -131,7 +131,7 @@ namespace JTTools.Controllers
                         package.Body = headerPackage.Bodies.ToHexString();
                         if (package.PackageIndex == 1)
                         {
-                            package.Body =$"Ê×°üÊı¾İÌå:\r\n{package.Body}\r\n{BodyAnalyze(headerPackage.Header.MsgId, headerPackage.Bodies)}\r\n" ;
+                            package.Body =$"é¦–åŒ…æ•°æ®ä½“:\r\n{package.Body}\r\n{BodyAnalyze(headerPackage.Header.MsgId, headerPackage.Bodies)}\r\n" ;
                         }
                     }
                     else
